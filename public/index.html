@@ -47,10 +47,11 @@
       padding: 12px 14px;
       border-radius: 14px;
       max-width: 80%;
-      line-height: 1.4;
+      line-height: 1.5;
       font-size: 15px;
       opacity: 0;
       animation: slideFadeIn 0.35s forwards;
+      word-wrap: break-word;
     }
 
     @keyframes slideFadeIn {
@@ -75,7 +76,6 @@
       100% { opacity: 0; }
     }
 
-    /* INPUT BAR */
     #inputArea {
       display: flex;
       gap: 10px;
@@ -94,6 +94,7 @@
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 16px;
+      box-sizing: border-box;
     }
 
     button {
@@ -126,20 +127,30 @@
 </div>
 
 <script>
+/* Conversation history */
 function saveHistory() {
   localStorage.setItem("chatHistory", document.getElementById("chatbox").innerHTML)
 }
-
 function loadHistory() {
   const saved = localStorage.getItem("chatHistory")
   if (saved) document.getElementById("chatbox").innerHTML = saved
 }
 
+/* Convert line breaks to HTML */
+function formatText(text) {
+  return text
+    .replace(/\n\n/g, "<br><br>")  // paragraphs
+    .replace(/\n/g, "<br>")        // single line breaks
+}
+
+/* Add message to chat */
 function addMessage(text, sender) {
   const box = document.getElementById("chatbox")
   const div = document.createElement("div")
+
   div.className = "msg " + sender
-  div.textContent = text
+  div.innerHTML = formatText(text)
+
   box.appendChild(div)
   box.scrollTop = box.scrollHeight
   saveHistory()
@@ -148,6 +159,7 @@ function addMessage(text, sender) {
 function showTyping() { document.getElementById("typing").style.display = "block" }
 function hideTyping() { document.getElementById("typing").style.display = "none" }
 
+/* Send message */
 async function sendMessage() {
   const input = document.getElementById("message")
   const message = input.value.trim()
@@ -168,7 +180,7 @@ async function sendMessage() {
   addMessage(data.reply, "bot")
 }
 
-/* Press Enter to Send */
+/* Send on Enter */
 document.getElementById("message").addEventListener("keydown", function(e) {
   if (e.key === "Enter") {
     e.preventDefault()
@@ -176,13 +188,15 @@ document.getElementById("message").addEventListener("keydown", function(e) {
   }
 })
 
-/* Mobile keyboard lift fix */
-window.visualViewport.addEventListener("resize", () => {
-  const inputBar = document.getElementById("inputArea")
-  inputBar.style.bottom = (window.innerHeight - window.visualViewport.height) + "px"
-})
+/* Mobile keyboard fix */
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    const inputBar = document.getElementById("inputArea")
+    inputBar.style.bottom = (window.innerHeight - window.visualViewport.height) + "px"
+  })
+}
 
-/* Welcome + Restore History */
+/* Load history and show welcome message */
 window.onload = () => {
   loadHistory()
   setTimeout(() => {
