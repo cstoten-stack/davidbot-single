@@ -7,6 +7,13 @@ import { fileURLToPath } from "url"
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Allow this site to be embedded in iframes
+app.use((req, res, next) => {
+  res.setHeader("X-Frame-Options", "ALLOWALL")
+  res.setHeader("Content-Security-Policy", "frame-ancestors *")
+  next()
+})
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -55,3 +62,4 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log("David server live on port", PORT)
 })
+
