@@ -2,37 +2,132 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>David Test Chat</title>
+  <title>David</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    #chatWrapper { width: 100%; max-width: 600px; background: white; border-radius: 6px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 80vh; }
-    #chatbox { flex: 1; overflow-y: auto; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px; }
-    .msg { margin-bottom: 12px; padding: 10px; border-radius: 6px; max-width: 80%; }
-    .user { background: #ddeeff; align-self: flex-end; }
-    .bot { background: #eeeeee; align-self: flex-start; }
-    #inputArea { display: flex; gap: 10px; }
-    input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
-    button { padding: 10px 20px; border-radius: 6px; border: none; background: #cc0000; color: white; font-size: 15px; cursor: pointer; }
-    button:hover { background: #aa0000; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header bar */
+    #header {
+      background: #cc0000;
+      color: white;
+      padding: 16px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* Chat area scroll box */
+    #chatbox {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      box-sizing: border-box;
+      background: white;
+    }
+
+    .msg {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      max-width: 80%;
+      line-height: 1.4;
+      font-size: 15px;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background: #d7e7ff;
+      align-self: flex-end;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bot {
+      background: #eeeeee;
+      align-self: flex-start;
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Input area fixed to bottom */
+    #inputArea {
+      display: flex;
+      padding: 12px;
+      background: #fafafa;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.08);
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-left: 10px;
+      padding: 12px 18px;
+      background: #cc0000;
+      color: white;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:active {
+      background: #a40000;
+    }
+
+    @media (max-width: 600px) {
+      #header {
+        font-size: 16px;
+        padding: 12px;
+      }
+
+      input, button {
+        font-size: 15px;
+      }
+
+      .msg {
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
+
 <body>
 
-<div id="chatWrapper">
-  <div id="chatbox"></div>
+<div id="header">David Doyle Assistant</div>
 
-  <div id="inputArea">
-    <input id="message" placeholder="Type a message">
-    <button onclick="sendMessage()">Send</button>
-  </div>
+<div id="chatbox"></div>
+
+<div id="inputArea">
+  <input id="message" placeholder="Type a message">
+  <button onclick="sendMessage()">Send</button>
 </div>
 
 <script>
 function addMessage(text, sender) {
   const box = document.getElementById("chatbox")
   const div = document.createElement("div")
+
   div.className = "msg " + sender
   div.textContent = text
+
   box.appendChild(div)
   box.scrollTop = box.scrollHeight
 }
