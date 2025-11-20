@@ -23,7 +23,6 @@
       overflow: hidden;
     }
 
-    /* HEADER */
     #header {
       background: var(--brand-blue);
       color: white;
@@ -31,17 +30,14 @@
       text-align: center;
       font-size: 18px;
       font-weight: bold;
-      letter-spacing: 0.5px;
       opacity: 0;
       animation: fadeIn 0.8s forwards;
     }
 
-    /* CHATBOX */
     #chatbox {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
-      box-sizing: border-box;
       background: white;
       scroll-behavior: smooth;
     }
@@ -53,7 +49,6 @@
       max-width: 80%;
       line-height: 1.4;
       font-size: 15px;
-      word-wrap: break-word;
       opacity: 0;
       animation: slideFadeIn 0.35s forwards;
     }
@@ -63,24 +58,11 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .user {
-      background: var(--light-blue);
-      align-self: flex-end;
-      margin-left: auto;
-      border-bottom-right-radius: 4px;
-    }
+    .user { background: var(--light-blue); margin-left: auto; }
+    .bot { background: var(--bot-grey); margin-right: auto; }
 
-    .bot {
-      background: var(--bot-grey);
-      align-self: flex-start;
-      margin-right: auto;
-      border-bottom-left-radius: 4px;
-    }
-
-    /* TYPING INDICATOR */
     #typing {
       font-size: 14px;
-      color: #666;
       font-style: italic;
       margin-bottom: 10px;
       display: none;
@@ -93,80 +75,39 @@
       100% { opacity: 0; }
     }
 
-    /* SAFE CONTAINER FOR INPUT + LOGO */
-    #inputSafeContainer {
-      background: #fafafa;
-      padding-bottom: 24px; /* lift above iPhone bar */
-      animation: fadeIn 0.8s forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
     /* INPUT BAR */
     #inputArea {
       display: flex;
+      gap: 10px;
       padding: 12px;
       background: #fafafa;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.08);
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+      position: fixed;
+      bottom: env(safe-area-inset-bottom);
+      left: 0;
+      right: 0;
     }
 
     input {
       flex: 1;
       padding: 12px;
-      border: 1px solid #ccc;
       border-radius: 8px;
+      border: 1px solid #ccc;
       font-size: 16px;
-      transition: box-shadow 0.2s ease;
-    }
-
-    input:focus {
-      outline: none;
-      box-shadow: 0 0 4px var(--brand-blue);
     }
 
     button {
-      margin-left: 10px;
       padding: 12px 18px;
       background: var(--brand-blue);
       color: white;
-      font-size: 15px;
-      border: none;
       border-radius: 8px;
+      border: none;
       cursor: pointer;
-      transition: transform 0.1s ease, background 0.2s ease;
-    }
-
-    button:active {
-      transform: scale(0.94);
-      background: #002a52;
-    }
-
-    /* LOGO BAR */
-    #logoBar {
-      text-align: center;
-      padding: 10px 0;
-      opacity: 0;
-      animation: fadeIn 1.2s forwards;
-    }
-
-    #logoBar img {
-      width: 120px;
-      opacity: 0.85;
-      transition: opacity 0.2s ease;
-    }
-
-    #logoBar img:hover {
-      opacity: 1;
     }
 
     @media (max-width: 600px) {
-      #header { font-size: 16px; padding: 12px; }
       input, button { font-size: 15px; }
       .msg { font-size: 14px; }
-      #logoBar img { width: 100px; }
     }
   </style>
 </head>
@@ -179,30 +120,19 @@
   <div id="typing">David is typing</div>
 </div>
 
-<div id="inputSafeContainer">
-
-  <div id="inputArea">
-    <input id="message" placeholder="Type a message">
-    <button onclick="sendMessage()">Send</button>
-  </div>
-
-  <div id="logoBar">
-    <img src="https://daviddoyle.co.uk/wp-content/uploads/2021/12/DD_Logo_Blue_300.png" alt="David Doyle Logo">
-  </div>
-
+<div id="inputArea">
+  <input id="message" placeholder="Type a message">
+  <button onclick="sendMessage()">Send</button>
 </div>
 
 <script>
 function saveHistory() {
-  const chatbox = document.getElementById("chatbox").innerHTML
-  localStorage.setItem("chatHistory", chatbox)
+  localStorage.setItem("chatHistory", document.getElementById("chatbox").innerHTML)
 }
 
 function loadHistory() {
   const saved = localStorage.getItem("chatHistory")
-  if (saved) {
-    document.getElementById("chatbox").innerHTML = saved
-  }
+  if (saved) document.getElementById("chatbox").innerHTML = saved
 }
 
 function addMessage(text, sender) {
@@ -215,14 +145,8 @@ function addMessage(text, sender) {
   saveHistory()
 }
 
-function showTyping() {
-  document.getElementById("typing").style.display = "block"
-  document.getElementById("chatbox").scrollTop = document.getElementById("chatbox").scrollHeight
-}
-
-function hideTyping() {
-  document.getElementById("typing").style.display = "none"
-}
+function showTyping() { document.getElementById("typing").style.display = "block" }
+function hideTyping() { document.getElementById("typing").style.display = "none" }
 
 async function sendMessage() {
   const input = document.getElementById("message")
@@ -231,7 +155,6 @@ async function sendMessage() {
 
   addMessage(message, "user")
   input.value = ""
-
   showTyping()
 
   const response = await fetch("/chat", {
@@ -241,30 +164,33 @@ async function sendMessage() {
   })
 
   hideTyping()
-
   const data = await response.json()
   addMessage(data.reply, "bot")
 }
 
+/* Press Enter to Send */
+document.getElementById("message").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault()
+    sendMessage()
+  }
+})
+
+/* Mobile keyboard lift fix */
+window.visualViewport.addEventListener("resize", () => {
+  const inputBar = document.getElementById("inputArea")
+  inputBar.style.bottom = (window.innerHeight - window.visualViewport.height) + "px"
+})
+
+/* Welcome + Restore History */
 window.onload = () => {
   loadHistory()
-
-  // Welcome message
   setTimeout(() => {
     if (!localStorage.getItem("welcomed")) {
       addMessage("Hello, I am David. How can I help you today", "bot")
       localStorage.setItem("welcomed", "true")
     }
   }, 300)
-
-  // ENTER TO SEND
-  const input = document.getElementById("message")
-  input.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      sendMessage()
-    }
-  })
 }
 </script>
 
