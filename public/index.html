@@ -187,7 +187,7 @@
   </div>
 
   <div id="logoBar">
-    <img src="https://daviddoyle.co.uk/wp-content/uploads/2021/06/DD_logo_blue.png" alt="David Doyle Logo">
+    <img src="https://daviddoyle.co.uk/wp-content/uploads/2021/12/DD_Logo_Blue_300.png" alt="David Doyle Logo">
   </div>
 
 </div>
@@ -248,12 +248,23 @@ async function sendMessage() {
 
 window.onload = () => {
   loadHistory()
+
+  // Welcome message
   setTimeout(() => {
     if (!localStorage.getItem("welcomed")) {
       addMessage("Hello, I am David. How can I help you today", "bot")
       localStorage.setItem("welcomed", "true")
     }
   }, 300)
+
+  // ENTER TO SEND
+  const input = document.getElementById("message")
+  input.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      sendMessage()
+    }
+  })
 }
 </script>
 
