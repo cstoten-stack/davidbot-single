@@ -3,11 +3,12 @@ import bodyParser from "body-parser"
 import OpenAI from "openai"
 import path from "path"
 import { fileURLToPath } from "url"
+import fetch from "node-fetch"  // needed for logging POST
 
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Allow embedding in iframe
+// Allow iframe embedding
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "ALLOWALL")
   res.setHeader("Content-Security-Policy", "frame-ancestors *")
@@ -17,16 +18,27 @@ app.use((req, res, next) => {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Serve static files
+// Serve frontend
 app.use(express.static(path.join(__dirname, "public")))
 app.use(bodyParser.json())
 
-// OpenAI client
+// OpenAI
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-// SYSTEM MESSAGE with tone guide applied
+// GOOGLE FORM LOGGING ENDPOINT
+const GOOGLE_FORM_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLScMElnNK8nuYCemKA9udlKmrPE4n3F1rbOJyLOarju9u8LQ3A/formResponse"
+
+// GOOGLE FORM FIELD IDs
+const FIELD_USER = "entry.411018445"
+const FIELD_BOT = "entry.301261812"
+const FIELD_TIME = "entry.90991198"
+const FIELD_SESSION = "entry.1006808920"
+const FIELD_DEVICE = "entry.1706130785"
+
+// Tone Guide System Message
 const SYSTEM_MESSAGE = `
 You are David, the softly spoken digital assistant for David Doyle Estate Agents in Hemel Hempstead.
 
@@ -67,10 +79,50 @@ Your purpose is to guide, reassure and support, in the warm and thoughtful style
 Format your replies using short paragraphs for readability.
 `
 
+// Utility: generate session ID
+function generateSessionId() {
+  return Math.random().toString(36).substring(2, 12)
+}
+
+// Utility: determine device type
+function getDevice(userAgent) {
+  userAgent = userAgent || ""
+  if (/iPhone|iPad|iPod/.test(userAgent)) return "iOS"
+  if (/Android/.test(userAgent)) return "Android"
+  if (/Windows/.test(userAgent)) return "Windows"
+  if (/Macintosh/.test(userAgent)) return "Mac"
+  return "Unknown"
+}
+
+// Log each conversation into Google Sheets
+async function logToGoogleSheet(userMsg, botReply, sessionId, device) {
+  const timestamp = new Date().toISOString()
+
+  const formData = new URLSearchParams()
+  formData.append(FIELD_USER, userMsg)
+  formData.append(FIELD_BOT, botReply)
+  formData.append(FIELD_TIME, timestamp)
+  formData.append(FIELD_SESSION, sessionId)
+  formData.append(FIELD_DEVICE, device)
+
+  try {
+    await fetch(GOOGLE_FORM_URL, {
+      method: "POST",
+      body: formData
+    })
+  } catch (err) {
+    console.error("Logging error", err)
+  }
+}
+
 // Chat endpoint
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || ""
+
+    // Generate or read session ID
+    const sessionId = req.headers["x-session-id"] || generateSessionId()
+    const device = getDevice(req.headers["user-agent"])
 
     const completion = await client.chat.completions.create({
       model: "gpt-4.1",
@@ -82,14 +134,19 @@ app.post("/chat", async (req, res) => {
     })
 
     const reply = completion.choices[0].message.content
-    res.json({ reply })
+
+    // Log conversation
+    logToGoogleSheet(userMessage, reply, sessionId, device)
+
+    res.json({ reply, sessionId })
+
   } catch (err) {
     console.error("Chat error", err)
     res.status(500).json({ error: "Something went wrong" })
   }
 })
 
-// Always return index.html on root
+// Serve the frontend root
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"))
 })
