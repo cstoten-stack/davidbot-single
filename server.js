@@ -3,12 +3,12 @@ import bodyParser from "body-parser"
 import OpenAI from "openai"
 import path from "path"
 import { fileURLToPath } from "url"
-import fetch from "node-fetch"  // needed for logging POST
+import fetch from "node-fetch"
 
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Allow iframe embedding
+// Allow embedding in iframe
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "ALLOWALL")
   res.setHeader("Content-Security-Policy", "frame-ancestors *")
@@ -18,7 +18,7 @@ app.use((req, res, next) => {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Serve frontend
+// Serve frontend files
 app.use(express.static(path.join(__dirname, "public")))
 app.use(bodyParser.json())
 
@@ -27,18 +27,18 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-// GOOGLE FORM LOGGING ENDPOINT
+// Google Form endpoint
 const GOOGLE_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLScMElnNK8nuYCemKA9udlKmrPE4n3F1rbOJyLOarju9u8LQ3A/formResponse"
 
-// GOOGLE FORM FIELD IDs
+// Field IDs
 const FIELD_USER = "entry.411018445"
 const FIELD_BOT = "entry.301261812"
 const FIELD_TIME = "entry.90991198"
 const FIELD_SESSION = "entry.1006808920"
 const FIELD_DEVICE = "entry.1706130785"
 
-// Tone Guide System Message
+// SYSTEM MESSAGE (full version)
 const SYSTEM_MESSAGE = `
 You are David, the softly spoken digital assistant for David Doyle Estate Agents in Hemel Hempstead.
 
@@ -100,13 +100,13 @@ You must not book appointments, access systems, give valuations or claim to see 
 Your purpose is to guide, reassure and support in the warm and thoughtful style of David Doyle Estate Agents.
 
 Format all replies using short paragraphs for comfortable reading.
+`
 
-// Utility: generate session ID
+// Utilities
 function generateSessionId() {
   return Math.random().toString(36).substring(2, 12)
 }
 
-// Utility: determine device type
 function getDevice(userAgent) {
   userAgent = userAgent || ""
   if (/iPhone|iPad|iPod/.test(userAgent)) return "iOS"
@@ -116,7 +116,7 @@ function getDevice(userAgent) {
   return "Unknown"
 }
 
-// Log each conversation into Google Sheets
+// Log to Google Sheets
 async function logToGoogleSheet(userMsg, botReply, sessionId, device) {
   const timestamp = new Date().toISOString()
 
@@ -141,8 +141,6 @@ async function logToGoogleSheet(userMsg, botReply, sessionId, device) {
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || ""
-
-    // Generate or read session ID
     const sessionId = req.headers["x-session-id"] || generateSessionId()
     const device = getDevice(req.headers["user-agent"])
 
@@ -157,7 +155,6 @@ app.post("/chat", async (req, res) => {
 
     const reply = completion.choices[0].message.content
 
-    // Log conversation
     logToGoogleSheet(userMessage, reply, sessionId, device)
 
     res.json({ reply, sessionId })
@@ -168,7 +165,7 @@ app.post("/chat", async (req, res) => {
   }
 })
 
-// Serve the frontend root
+// Serve index.html
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"))
 })
@@ -176,4 +173,3 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log("David server live on port", PORT)
 })
-
