@@ -62,6 +62,13 @@
     .user { background: var(--light-blue); margin-left: auto; }
     .bot { background: var(--bot-grey); margin-right: auto; }
 
+    a {
+      color: var(--brand-blue);
+      font-weight: bold;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+
     #typing {
       font-size: 14px;
       font-style: italic;
@@ -127,23 +134,35 @@
 </div>
 
 <script>
-/* Conversation history */
+/* Save and load chat history */
 function saveHistory() {
   localStorage.setItem("chatHistory", document.getElementById("chatbox").innerHTML)
 }
+
 function loadHistory() {
   const saved = localStorage.getItem("chatHistory")
   if (saved) document.getElementById("chatbox").innerHTML = saved
 }
 
-/* Convert line breaks to HTML */
+/* Convert URLs & paragraphs */
 function formatText(text) {
-  return text
-    .replace(/\n\n/g, "<br><br>")  // paragraphs
-    .replace(/\n/g, "<br>")        // single line breaks
+
+  // Turn any URL into a clickable link
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+
+  let formatted = text.replace(urlRegex, function(url) {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+  })
+
+  // Paragraph spacing
+  formatted = formatted
+    .replace(/\n\n/g, "<br><br>")
+    .replace(/\n/g, "<br>")
+
+  return formatted
 }
 
-/* Add message to chat */
+/* Add message bubble */
 function addMessage(text, sender) {
   const box = document.getElementById("chatbox")
   const div = document.createElement("div")
@@ -180,7 +199,7 @@ async function sendMessage() {
   addMessage(data.reply, "bot")
 }
 
-/* Send on Enter */
+/* Enter key sends message */
 document.getElementById("message").addEventListener("keydown", function(e) {
   if (e.key === "Enter") {
     e.preventDefault()
@@ -188,7 +207,7 @@ document.getElementById("message").addEventListener("keydown", function(e) {
   }
 })
 
-/* Mobile keyboard fix */
+/* iPhone keyboard fix */
 if (window.visualViewport) {
   window.visualViewport.addEventListener("resize", () => {
     const inputBar = document.getElementById("inputArea")
@@ -196,7 +215,7 @@ if (window.visualViewport) {
   })
 }
 
-/* Load history and show welcome message */
+/* Load history & welcome */
 window.onload = () => {
   loadHistory()
   setTimeout(() => {
