@@ -28,8 +28,11 @@ const client = new OpenAI({
 })
 
 // Support Board Cloud API
+// Your SupportBoard Cloud base is: https://cloud.board.support/script
+// API endpoint for the web API is:
 const SB_API_URL = "https://cloud.board.support/script/include/api.php"
-const SB_TOKEN = process.env.SUPPORTBOARD_TOKEN // set this in Render dashboard
+// Token is stored as an environment variable in Render
+const SB_TOKEN = process.env.SUPPORTBOARD_TOKEN
 
 // Google Form endpoint
 const GOOGLE_FORM_URL =
@@ -108,6 +111,7 @@ Format all replies using short paragraphs for comfortable reading.
 `
 
 // Utilities
+
 function generateSessionId() {
   return Math.random().toString(36).substring(2, 12)
 }
@@ -232,7 +236,8 @@ function classifySubject(message) {
   return "other"
 }
 
-// Log to Google Sheet
+// Google Sheets logging
+
 async function logToGoogleSheet(userMsg, botReply, sessionId, device, origin, enquiryType, subject) {
   const timestamp = new Date().toISOString()
   const formData = new URLSearchParams()
@@ -253,7 +258,8 @@ async function logToGoogleSheet(userMsg, botReply, sessionId, device, origin, en
   }
 }
 
-// Ask David (OpenAI)
+// Ask David via OpenAI
+
 async function getDavidReply(userMessage) {
   const completion = await client.chat.completions.create({
     model: "gpt-4.1",
@@ -267,7 +273,8 @@ async function getDavidReply(userMessage) {
   return completion.choices[0].message.content
 }
 
-// Call Support Board API
+// Call Support Board Cloud API
+
 async function callSupportBoard(params) {
   if (!SB_TOKEN) {
     throw new Error("SUPPORTBOARD_TOKEN is not set")
@@ -289,7 +296,8 @@ async function callSupportBoard(params) {
   return data
 }
 
-// Helpers for Support Board polling
+// Helpers for polling
+
 let lastPollDateTime = null
 const processedMessageIds = new Set()
 
@@ -312,16 +320,18 @@ function toSBDateTime(date) {
 
 function getPollDateTime() {
   if (lastPollDateTime) return lastPollDateTime
-  const d = new Date(Date.now() - 60 * 60 * 1000) // last hour
+  const d = new Date(Date.now() - 60 * 60 * 1000)
   return toSBDateTime(d)
 }
 
-// SupportBoard health check endpoint (for future webhook if needed)
+// Optional health check endpoint
+
 app.post("/sb-webhook", (req, res) => {
   res.json({ status: "ok" })
 })
 
-// SupportBoard training webhook endpoint (not used if you keep Pabbly on the webhook)
+// Training webhook endpoint (not used if Pabbly owns the webhook already)
+
 app.post("/sb-chat", async (req, res) => {
   try {
     const userMessage = req.body.message || ""
@@ -343,7 +353,9 @@ app.post("/sb-chat", async (req, res) => {
   }
 })
 
-// SupportBoard API polling endpoint (no reply back to SB, logs only)
+// Support Board API polling endpoint
+// Training mode only: log suggested replies, do not send back to SupportBoard
+
 app.get("/sb-poll", async (req, res) => {
   try {
     const datetime = getPollDateTime()
@@ -355,7 +367,7 @@ app.get("/sb-poll", async (req, res) => {
       routing_unassigned: "false"
     })
 
-    if (!sbResponse.success) {
+    if (!sbResponse || sbResponse.success !== true) {
       console.error("SupportBoard API error", sbResponse)
       return res.status(500).json({ error: "SupportBoard API error" })
     }
@@ -369,10 +381,8 @@ app.get("/sb-poll", async (req, res) => {
       const conversationId = conv.conversation_id
       const userMessage = conv.message || ""
 
-      // Skip already processed messages
       if (!messageId || processedMessageIds.has(messageId)) continue
 
-      // Skip bot or agent messages
       if (messageUserType === "bot" || messageUserType === "agent") {
         processedMessageIds.add(messageId)
         continue
@@ -407,7 +417,8 @@ app.get("/sb-poll", async (req, res) => {
   }
 })
 
-// Main chat endpoint for website and direct use
+// Main chat endpoint for your website and direct use
+
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || ""
@@ -432,6 +443,7 @@ app.post("/chat", async (req, res) => {
 })
 
 // Serve UI
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"))
 })
